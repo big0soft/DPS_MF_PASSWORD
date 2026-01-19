@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_title">Password Generator</string>
+    <string name="app_subtitle">Enter a date to generate a password</string>
+    <string name="date_label">Date</string>
+    <string name="date_placeholder">yyyy-MM-dd, dd-MM-yyyy, or dd/MM/yyyy</string>
+    <string name="select_date">Select date</string>
+    <string name="invalid_date_format">Invalid date format</string>
+    <string name="supported_formats">Supported formats: yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy</string>
+    <string name="daily_password_title">Daily Password</string>
+    <string name="copy_password">Copy password</string>
+    <string name="tap_to_copy">Tap to copy</string>
+    <string name="how_it_works_title">How it works:</string>
+    <string name="how_it_works_body">1. Enter a date in any supported format\n2. The date is converted to DDMMYY format\n3. The digits are reversed\n4. Each digit is incremented (even positions +2, odd positions +3)\n5. Result is taken modulo 10</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="error_generating_password">Error generating password: %s</string>
+</resources>
