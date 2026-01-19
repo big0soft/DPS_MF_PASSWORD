@@ -21,12 +21,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.toLocalDateTime
 
 @Composable
 @Preview
@@ -259,32 +253,11 @@ fun PasswordGeneratorScreen() {
 }
 
 private fun todayDate(): SimpleDate {
-    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-    return SimpleDate(
-        year = today.year,
-        month = today.monthNumber,
-        day = today.dayOfMonth
-    )
+    return getTodayDate()
 }
 
 private fun SimpleDate.toInputString(): String {
     val monthString = month.toString().padStart(2, '0')
     val dayString = day.toString().padStart(2, '0')
     return "$year-$monthString-$dayString"
-}
-
-private fun SimpleDate.toEpochMillisAtStartOfDay(): Long {
-    val date = LocalDate(year = year, monthNumber = month, dayOfMonth = day)
-    return date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-}
-
-private fun millisToSimpleDate(millis: Long): SimpleDate {
-    val date = Instant.fromEpochMilliseconds(millis)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
-    return SimpleDate(
-        year = date.year,
-        month = date.monthNumber,
-        day = date.dayOfMonth
-    )
 }
