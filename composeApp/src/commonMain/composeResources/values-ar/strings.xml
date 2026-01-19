@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_title">مولد كلمة المرور</string>
+    <string name="app_subtitle">أدخل تاريخًا لإنشاء كلمة مرور</string>
+    <string name="date_label">التاريخ</string>
+    <string name="date_placeholder">yyyy-MM-dd أو dd-MM-yyyy أو dd/MM/yyyy</string>
+    <string name="select_date">اختر التاريخ</string>
+    <string name="invalid_date_format">تنسيق التاريخ غير صحيح</string>
+    <string name="supported_formats">التنسيقات المدعومة: yyyy-MM-dd، dd-MM-yyyy، dd/MM/yyyy</string>
+    <string name="daily_password_title">كلمة المرور اليومية</string>
+    <string name="manual_password_title">كلمة المرور اليدوية</string>
+    <string name="copy_password">نسخ كلمة المرور</string>
+    <string name="tap_to_copy">اضغط للنسخ</string>
+    <string name="how_it_works_title">كيف يعمل:</string>
+    <string name="how_it_works_body">1. أدخل تاريخًا بأي تنسيق مدعوم\n2. يتم تحويل التاريخ إلى تنسيق DDMMYY\n3. يتم عكس الأرقام\n4. يتم زيادة كل رقم (المواضع الزوجية +2، الفردية +3)\n5. يتم أخذ النتيجة modulo 10</string>
+    <string name="ok">موافق</string>
+    <string name="cancel">إلغاء</string>
+    <string name="error_generating_password">خطأ في إنشاء كلمة المرور: %s</string>
+    <string name="generate">إنشاء</string>
+    <string name="generate_from_calendar">إنشاء من التقويم</string>
+    <string name="generate_from_input">إنشاء من الإدخال</string>
+</resources>

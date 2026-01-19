@@ -24,23 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dps_mf_password.composeapp.generated.resources.Res
+import dps_mf_password.composeapp.generated.resources.*
+import dps_mf_password.composeapp.generated.resources.app_title
 import org.jetbrains.compose.resources.stringResource
-import dps.payment.mfp.composeapp.generated.resources.Res
-import dps.payment.mfp.composeapp.generated.resources.app_title
-import dps.payment.mfp.composeapp.generated.resources.app_subtitle
-import dps.payment.mfp.composeapp.generated.resources.cancel
-import dps.payment.mfp.composeapp.generated.resources.copy_password
-import dps.payment.mfp.composeapp.generated.resources.daily_password_title
-import dps.payment.mfp.composeapp.generated.resources.date_label
-import dps.payment.mfp.composeapp.generated.resources.date_placeholder
-import dps.payment.mfp.composeapp.generated.resources.error_generating_password
-import dps.payment.mfp.composeapp.generated.resources.how_it_works_body
-import dps.payment.mfp.composeapp.generated.resources.how_it_works_title
-import dps.payment.mfp.composeapp.generated.resources.invalid_date_format
-import dps.payment.mfp.composeapp.generated.resources.ok
-import dps.payment.mfp.composeapp.generated.resources.select_date
-import dps.payment.mfp.composeapp.generated.resources.supported_formats
-import dps.payment.mfp.composeapp.generated.resources.tap_to_copy
+
 
 @Composable
 @Preview
@@ -60,6 +48,8 @@ private fun AppTheme(content: @Composable () -> Unit) {
             onPrimaryContainer = Color(0xFFEAF1FF),
             secondary = Color(0xFF9AB3D6),
             onSecondary = Color(0xFF102238),
+            secondaryContainer = Color(0xFF2A3F5C),
+            onSecondaryContainer = Color(0xFFE6EAF2),
             background = Color(0xFF0E1116),
             onBackground = Color(0xFFE6EAF2),
             surface = Color(0xFF141821),
@@ -77,6 +67,8 @@ private fun AppTheme(content: @Composable () -> Unit) {
             onPrimaryContainer = Color(0xFFFFFFFF),
             secondary = Color(0xFF4B6B9A),
             onSecondary = Color(0xFFFFFFFF),
+            secondaryContainer = Color(0xFFD6E3F0),
+            onSecondaryContainer = Color(0xFF1A1C20),
             background = Color(0xFFF6F8FC),
             onBackground = Color(0xFF1A1C20),
             surface = Color(0xFFFFFFFF),
@@ -98,9 +90,17 @@ private fun AppTheme(content: @Composable () -> Unit) {
 @Composable
 fun PasswordGeneratorScreen() {
     val today = remember { todayDate() }
-    var dateInput by remember { mutableStateOf(today.toInputString()) }
+    val dailyPassword = remember(today) {
+        try {
+            PasswordGenerator.generatePassword(today)
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    var dateInput by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var generatedPassword by remember { mutableStateOf<String?>(null) }
+    var manualPassword by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
@@ -108,21 +108,19 @@ fun PasswordGeneratorScreen() {
         dateInput.isNotBlank() && DateParser.parseDate(dateInput) != null
     }
 
-    LaunchedEffect(dateInput) {
+    fun generateManualPassword() {
         val date = DateParser.parseDate(dateInput)
         if (date != null) {
             try {
-                generatedPassword = PasswordGenerator.generatePassword(date)
+                manualPassword = PasswordGenerator.generatePassword(date)
                 errorMessage = null
             } catch (e: Exception) {
                 errorMessage = e.message ?: ""
-                generatedPassword = null
+                manualPassword = null
             }
         } else {
-            if (dateInput.isBlank()) {
-                errorMessage = null
-            }
-            generatedPassword = null
+            errorMessage = "INVALID_DATE_FORMAT"
+            manualPassword = null
         }
     }
 
@@ -140,6 +138,7 @@ fun PasswordGeneratorScreen() {
                         datePickerState.selectedDateMillis?.let { millis ->
                             val selectedDate = millisToSimpleDate(millis)
                             dateInput = selectedDate.toInputString()
+                            generateManualPassword()
                         }
                         showDatePicker = false
                     }
@@ -182,10 +181,31 @@ fun PasswordGeneratorScreen() {
             textAlign = TextAlign.Center
         )
 
-        // Daily password
-        generatedPassword?.let { password ->
+        // Daily password (fixed for today)
+        dailyPassword?.let { password ->
             DailyPasswordCard(
                 password = password,
+                title = stringResource(Res.string.daily_password_title),
+                onCopy = { clipboardManager.setText(AnnotatedString(password)) }
+            )
+        }
+
+        // Manual password section
+        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        Text(
+            text = stringResource(Res.string.manual_password_title),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+        )
+
+        // Manual password result
+        manualPassword?.let { password ->
+            DailyPasswordCard(
+                password = password,
+                title = stringResource(Res.string.manual_password_title),
                 onCopy = { clipboardManager.setText(AnnotatedString(password)) }
             )
         }
@@ -196,6 +216,7 @@ fun PasswordGeneratorScreen() {
             onValueChange = { newValue ->
                 dateInput = newValue
                 errorMessage = null
+                manualPassword = null
             },
             label = { Text(stringResource(Res.string.date_label)) },
             placeholder = { Text(stringResource(Res.string.date_placeholder)) },
@@ -213,13 +234,20 @@ fun PasswordGeneratorScreen() {
             },
             supportingText = {
                 if (errorMessage != null) {
-                    Text(
-                        text = stringResource(
-                            Res.string.error_generating_password,
-                            errorMessage ?: ""
-                        ),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    if (errorMessage == "INVALID_DATE_FORMAT") {
+                        Text(
+                            text = stringResource(Res.string.invalid_date_format),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(
+                                Res.string.error_generating_password,
+                                errorMessage ?: ""
+                            ),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 } else if (dateInput.isNotBlank() && !isValidDate) {
                     Text(
                         text = stringResource(Res.string.invalid_date_format),
@@ -230,6 +258,32 @@ fun PasswordGeneratorScreen() {
                 }
             }
         )
+
+        // Generate buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(
+                onClick = { generateManualPassword() },
+                modifier = Modifier.weight(1f),
+                enabled = isValidDate
+            ) {
+                Text(stringResource(Res.string.generate_from_input))
+            }
+            Button(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.weight(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.DateRange,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(Res.string.generate_from_calendar))
+            }
+        }
 
         // Info card
         Card(
@@ -275,6 +329,7 @@ private fun SimpleDate.toInputString(): String {
 @Composable
 private fun DailyPasswordCard(
     password: String,
+    title: String,
     onCopy: () -> Unit
 ) {
     Card(
@@ -299,7 +354,7 @@ private fun DailyPasswordCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(Res.string.daily_password_title),
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                     fontWeight = FontWeight.Medium

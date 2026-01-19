@@ -7,8 +7,12 @@
     <string name="invalid_date_format">Formato de fecha no válido</string>
     <string name="supported_formats">Formatos compatibles: yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy</string>
     <string name="daily_password_title">Contraseña diaria</string>
+    <string name="manual_password_title">Contraseña manual</string>
     <string name="copy_password">Copiar contraseña</string>
     <string name="tap_to_copy">Toca para copiar</string>
+    <string name="generate">Generar</string>
+    <string name="generate_from_calendar">Generar desde calendario</string>
+    <string name="generate_from_input">Generar desde entrada</string>
     <string name="how_it_works_title">Cómo funciona:</string>
     <string name="how_it_works_body">1. Introduce una fecha en cualquier formato compatible\n2. La fecha se convierte al formato DDMMYY\n3. Se invierten los dígitos\n4. Cada dígito se incrementa (posiciones pares +2, impares +3)\n5. El resultado se toma módulo 10</string>
     <string name="ok">Aceptar</string>

@@ -7,8 +7,12 @@
     <string name="invalid_date_format">Invalid date format</string>
     <string name="supported_formats">Supported formats: yyyy-MM-dd, dd-MM-yyyy, dd/MM/yyyy</string>
     <string name="daily_password_title">Daily Password</string>
+    <string name="manual_password_title">Manual Password</string>
     <string name="copy_password">Copy password</string>
     <string name="tap_to_copy">Tap to copy</string>
+    <string name="generate">Generate</string>
+    <string name="generate_from_calendar">Generate from Calendar</string>
+    <string name="generate_from_input">Generate from Input</string>
     <string name="how_it_works_title">How it works:</string>
     <string name="how_it_works_body">1. Enter a date in any supported format\n2. The date is converted to DDMMYY format\n3. The digits are reversed\n4. Each digit is incremented (even positions +2, odd positions +3)\n5. Result is taken modulo 10</string>
     <string name="ok">OK</string>
