@@ -6,16 +6,27 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 
 @Composable
 @Preview
@@ -25,14 +36,67 @@ fun App() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasswordGeneratorScreen() {
-    var dateInput by remember { mutableStateOf("") }
+    val today = remember { todayDate() }
+    var dateInput by remember { mutableStateOf(today.toInputString()) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var generatedPassword by remember { mutableStateOf<String?>(null) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
 
     val isValidDate = remember(dateInput) {
         dateInput.isNotBlank() && DateParser.parseDate(dateInput) != null
+    }
+
+    LaunchedEffect(dateInput) {
+        val date = DateParser.parseDate(dateInput)
+        if (date != null) {
+            try {
+                generatedPassword = PasswordGenerator.generatePassword(date)
+                errorMessage = null
+            } catch (e: Exception) {
+                errorMessage = "Error generating password: ${e.message}"
+                generatedPassword = null
+            }
+        } else {
+            if (dateInput.isBlank()) {
+                errorMessage = null
+            }
+            generatedPassword = null
+        }
+    }
+
+    if (showDatePicker) {
+        val initialDate = DateParser.parseDate(dateInput) ?: today
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = initialDate.toEpochMillisAtStartOfDay()
+        )
+
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            val selectedDate = millisToSimpleDate(millis)
+                            dateInput = selectedDate.toInputString()
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     Column(
@@ -66,14 +130,21 @@ fun PasswordGeneratorScreen() {
             onValueChange = { newValue ->
                 dateInput = newValue
                 errorMessage = null
-                generatedPassword = null
             },
             label = { Text("Date") },
             placeholder = { Text("yyyy-MM-dd, dd-MM-yyyy, or dd/MM/yyyy") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            isError = errorMessage != null,
+            isError = errorMessage != null || (dateInput.isNotBlank() && !isValidDate),
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Select date"
+                    )
+                }
+            },
             supportingText = {
                 if (errorMessage != null) {
                     Text(
@@ -90,36 +161,6 @@ fun PasswordGeneratorScreen() {
                 }
             }
         )
-
-        // Generate button
-        Button(
-            onClick = {
-                val date = DateParser.parseDate(dateInput)
-                if (date != null) {
-                    try {
-                        generatedPassword = PasswordGenerator.generatePassword(date)
-                        errorMessage = null
-                    } catch (e: Exception) {
-                        errorMessage = "Error generating password: ${e.message}"
-                        generatedPassword = null
-                    }
-                } else {
-                    errorMessage = "Please enter a valid date in a supported format"
-                    generatedPassword = null
-                }
-            },
-            enabled = isValidDate,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Text(
-                text = "Generate Password",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
 
         // Generated password display
         generatedPassword?.let { password ->
@@ -138,12 +179,28 @@ fun PasswordGeneratorScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Generated Password",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Generated Password",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.Medium
+                        )
+                        IconButton(
+                            onClick = {
+                                clipboardManager.setText(AnnotatedString(password))
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy password"
+                            )
+                        }
+                    }
 
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -199,4 +256,35 @@ fun PasswordGeneratorScreen() {
             }
         }
     }
+}
+
+private fun todayDate(): SimpleDate {
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    return SimpleDate(
+        year = today.year,
+        month = today.monthNumber,
+        day = today.dayOfMonth
+    )
+}
+
+private fun SimpleDate.toInputString(): String {
+    val monthString = month.toString().padStart(2, '0')
+    val dayString = day.toString().padStart(2, '0')
+    return "$year-$monthString-$dayString"
+}
+
+private fun SimpleDate.toEpochMillisAtStartOfDay(): Long {
+    val date = LocalDate(year = year, monthNumber = month, dayOfMonth = day)
+    return date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+}
+
+private fun millisToSimpleDate(millis: Long): SimpleDate {
+    val date = Instant.fromEpochMilliseconds(millis)
+        .toLocalDateTime(TimeZone.currentSystemDefault())
+        .date
+    return SimpleDate(
+        year = date.year,
+        month = date.monthNumber,
+        day = date.dayOfMonth
+    )
 }
